@@ -7,6 +7,8 @@ var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+var graphqlHTTP = require('express-graphql');
+import { schema, root } from './routes/schema';
 
 var app = express();
 var port = 3001;
@@ -24,8 +26,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+
+app.use('/graphql', graphqlHTTP({
+  schema,
+  rootValue: root,
+  graphiql: true
+}));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
