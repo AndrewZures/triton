@@ -5,11 +5,14 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var logger = require('morgan');
 var cors = require('cors');
+import { graphqlExpress, graphiqlExpress } from 'apollo-server-express';
+
+import { find, filter } from 'lodash';
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var graphqlHTTP = require('express-graphql');
-import { schema, root } from './routes/schema';
+import { mergeSchemas, makeExecutableSchema } from 'graphql-tools';
 
 var app = express();
 var port = 3002;
@@ -30,32 +33,72 @@ app.use(function(req, res, next) {
   next();
 });
 
+import { makeSchemaExecutable } from 'graphql-tools';
+
+const typeDefs = `
+  type Query {
+    post(id: Int!): Post
+    posts: [Post]
+    authors: [Author]
+  }
+
+  type Post {
+    id: Int!
+    title: String
+    author: Author
+  }
+  
+  type Author {
+    id: Int!
+    name: String
+    posts: [Post]
+  }
+
+  schema {
+    query: Query
+  }
+`
+
+const posts = [
+  { id: 1, authorId: 1, title: 'Post 1 Title' },
+  { id: 2, authorId: 1, title: 'Post 2 Title' },
+  { id: 3, authorId: 3, title: 'Post 3 Title' }
+]
+
+const authors = [
+  { id: 1, name: 'Author 1' },
+  { id: 2, name: 'Author 2' },
+  { id: 3, name: 'Author 3' },
+]
+
+const resolvers = {
+  Query: {
+    post: (_, {id}) => find(posts, { id }),
+    posts: (_, {id}) => filter(posts, { id }),
+    authors: () => authors,
+  },
+  Post: {
+    author: ({authorId}) => find(authors, { id: authorId }),
+  },
+  Author: {
+    posts: ({id}) => filter(posts, { authorId: id }),
+  }
+}
+
+const schema = makeExecutableSchema({
+  typeDefs,
+  resolvers,
+})
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-app.use('/graphql', cors(), graphqlHTTP({
-  schema,
-  rootValue: root,
-  graphiql: true
-}));
+app.use('/graphql', bodyParser.json(), graphqlExpress({ schema }));
+app.get('/graphiql', graphiqlExpress({ endpointURL: '/graphql' })); 
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
 });
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
-
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
-
-module.exports = app;

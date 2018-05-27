@@ -5,9 +5,10 @@ import gql from 'graphql-tag';
 
 const query = gql`
     {
-        howdy {
-            hiya {
-                hey
+        post(id: 1) {
+            id
+            author {
+                name
             }
         }
     }
@@ -21,7 +22,8 @@ const Test = () => (
 
             return (
                 <div>
-                    {data.howdy.hiya.hey}
+                    {data.post.id}
+                    {data.post.author.name}
                 </div>
             );
         }}

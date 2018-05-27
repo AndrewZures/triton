@@ -5,11 +5,16 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var logger = require('morgan');
 var cors = require('cors');
+import { graphqlExpress, graphiqlExpress } from 'apollo-server-express';
+
+import { find, filter } from 'lodash';
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var graphqlHTTP = require('express-graphql');
-import { schema, root } from './routes/schema';
+import { root } from './routes/schema';
+import remoteSchema from './routes/remoteSchema';
+import { mergeSchemas, makeExecutableSchema } from 'graphql-tools';
 
 var app = express();
 var port = 3001;
@@ -30,32 +35,22 @@ app.use(function(req, res, next) {
   next();
 });
 
-
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use(cors());
 
-app.use('/graphql', cors(), graphqlHTTP({
-  schema,
-  rootValue: root,
-  graphiql: true
-}));
+async function run() {
+  const schema = await remoteSchema();
+  app.use('/graphql', bodyParser.json(), graphqlExpress({ schema }));
+  app.get('/graphiql', graphiqlExpress({ endpointURL: '/graphql' })); 
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
-});
+  // catch 404 and forward to error handler
+  app.use(function(req, res, next) {
+    next(createError(404));
+  });
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+  app.listen(port, () => console.log(`Example app listening on port ${port}!`))
+}
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
 
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
-
-module.exports = app;
+run();
