@@ -43,6 +43,7 @@ const typeDefs = `
   type Query {
     post(id: Int!): Post
     posts: [Post]
+    author(id: Int!): Author
     authors: [Author]
   }
 
@@ -54,7 +55,9 @@ const typeDefs = `
   
   type Author {
     id: Int!
-    name: String
+    firstName: String
+    lastName: String
+    email: String
     posts: [Post]
   }
 
@@ -63,31 +66,20 @@ const typeDefs = `
   }
 `
 var models = require('./models');
-// models.post.findById(1, { attributes: ['id'] });
-
-const posts = [
-  { id: 1, authorId: 1, title: 'Post 1 Title' },
-  { id: 2, authorId: 1, title: 'Post 2 Title' },
-  { id: 3, authorId: 3, title: 'Post 3 Title' }
-]
-
-const authors = [
-  { id: 1, name: 'Author 1' },
-  { id: 2, name: 'Author 2' },
-  { id: 3, name: 'Author 3' },
-]
 
 const resolvers = {
   Query: {
-    post: (_, {id}) => models.post.findById(1),
-    posts: (_, {id}) => filter(posts, { id }),
-    authors: () => authors,
+    post: (_, {id}) => models.post.findById(1, { include: ['author'] }),
+    posts: (_, {id}) => models.post.findAll(),
+    author: (_, {id}) => models.author.findById(id),
   },
   Post: {
-    author: ({authorId}) => find(authors, { id: authorId }),
+    author: ({author, author_id}) => {
+      return author ? author : models.author.findById(author_id, { include: ['posts'] });
+    }
   },
   Author: {
-    posts: ({id}) => filter(posts, { authorId: id }),
+    posts: ({id, posts}) => posts ? posts : models.post.findAll({ where: { author_id: id }})
   }
 }
 
