@@ -9,6 +9,10 @@ import { graphqlExpress, graphiqlExpress } from 'apollo-server-express';
 
 import { find, filter } from 'lodash';
 
+// import { initialize } from './db/initializer';
+
+// initialize();
+
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var graphqlHTTP = require('express-graphql');
@@ -58,6 +62,8 @@ const typeDefs = `
     query: Query
   }
 `
+var models = require('./models');
+// models.post.findById(1, { attributes: ['id'] });
 
 const posts = [
   { id: 1, authorId: 1, title: 'Post 1 Title' },
@@ -73,7 +79,7 @@ const authors = [
 
 const resolvers = {
   Query: {
-    post: (_, {id}) => find(posts, { id }),
+    post: (_, {id}) => models.post.findById(1),
     posts: (_, {id}) => filter(posts, { id }),
     authors: () => authors,
   },

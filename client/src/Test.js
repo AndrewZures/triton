@@ -7,9 +7,7 @@ const query = gql`
     {
         post(id: 1) {
             id
-            author {
-                name
-            }
+            title
         }
     }
 `
@@ -23,7 +21,7 @@ const Test = () => (
             return (
                 <div>
                     {data.post.id}
-                    {data.post.author.name}
+                    {data.post.title}
                 </div>
             );
         }}
